@@ -1,6 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatPrice } from '@/lib/utils/format'
 
+type OrderRow = { total: number; status: string; payment_status: string }
+type RecentOrderRow = { total: number; created_at: string; status: string }
+type OrderItemRow = { product_name: string; quantity: number; subtotal: number }
+
 export default async function AdminAnalyticsPage() {
   const supabase = await createClient()
 
@@ -8,14 +12,18 @@ export default async function AdminAnalyticsPage() {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
   const [
-    { data: recentOrders },
-    { data: topProducts },
-    { data: allOrders },
+    { data: recentOrdersRaw },
+    { data: topProductsRaw },
+    { data: allOrdersRaw },
   ] = await Promise.all([
     supabase.from('orders').select('total, created_at, status').gte('created_at', thirtyDaysAgo).eq('payment_status', 'paid'),
     supabase.from('order_items').select('product_name, quantity, subtotal').order('quantity', { ascending: false }).limit(10),
     supabase.from('orders').select('total, status, payment_status').eq('payment_status', 'paid'),
   ])
+
+  const recentOrders = recentOrdersRaw as RecentOrderRow[] | null
+  const topProducts = topProductsRaw as OrderItemRow[] | null
+  const allOrders = allOrdersRaw as OrderRow[] | null
 
   const totalRevenue = allOrders?.reduce((s, o) => s + o.total, 0) ?? 0
   const last30Revenue = recentOrders?.reduce((s, o) => s + o.total, 0) ?? 0
