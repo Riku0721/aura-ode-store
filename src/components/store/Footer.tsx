@@ -1,5 +1,21 @@
 import Link from 'next/link'
-import { Instagram, Facebook } from 'lucide-react'
+function InstagramIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+function FacebookIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    </svg>
+  )
+}
 
 export default function Footer() {
   return (
@@ -22,14 +38,14 @@ export default function Footer() {
                 className="p-2 rounded-full border border-white/20 hover:border-[#c9a84c] hover:text-[#c9a84c] transition-colors"
                 aria-label="Instagram"
               >
-                <Instagram size={16} />
+                <InstagramIcon size={16} />
               </a>
               <a
                 href="#"
                 className="p-2 rounded-full border border-white/20 hover:border-[#c9a84c] hover:text-[#c9a84c] transition-colors"
                 aria-label="Facebook"
               >
-                <Facebook size={16} />
+                <FacebookIcon size={16} />
               </a>
             </div>
           </div>
