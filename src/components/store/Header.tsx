@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useState } from 'react'
-import { ShoppingCart, Menu, X, Search, User } from 'lucide-react'
+import { ShoppingCart, Menu, X, Search, User, LayoutDashboard } from 'lucide-react'
 import { useCartStore } from '@/store/cart'
 import { cn } from '@/lib/utils/cn'
 
@@ -12,7 +12,11 @@ const navLinks = [
   { href: '/contact', label: '聯絡' },
 ]
 
-export default function Header() {
+interface Props {
+  isAdmin?: boolean
+}
+
+export default function Header({ isAdmin = false }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
   const itemCount = useCartStore((s) => s.itemCount())
 
@@ -69,6 +73,18 @@ export default function Header() {
               )}
             </Link>
 
+            {/* 管理員後台按鈕 — 只有 admin/staff 才看得到 */}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="hidden md:flex items-center gap-1.5 bg-[#c9a84c] text-[#0d1b3e] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#e2c472] transition-colors"
+                aria-label="管理後台"
+              >
+                <LayoutDashboard size={13} />
+                後台
+              </Link>
+            )}
+
             {/* Mobile menu toggle */}
             <button
               className="md:hidden p-2 text-white/70 hover:text-white transition-colors"
@@ -85,7 +101,7 @@ export default function Header() {
       <div
         className={cn(
           'md:hidden overflow-hidden transition-all duration-300',
-          menuOpen ? 'max-h-64' : 'max-h-0'
+          menuOpen ? 'max-h-72' : 'max-h-0'
         )}
       >
         <nav className="bg-[#0d1b3e] border-t border-white/10 px-4 py-4 flex flex-col gap-4">
@@ -99,6 +115,16 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex items-center gap-2 text-[#c9a84c] font-bold"
+              onClick={() => setMenuOpen(false)}
+            >
+              <LayoutDashboard size={15} />
+              管理後台
+            </Link>
+          )}
         </nav>
       </div>
     </header>

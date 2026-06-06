@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Save, Check, Plus, X } from 'lucide-react'
+import ImageUpload from '@/components/admin/ImageUpload'
+import { revalidateSettings } from '@/app/actions/revalidate'
 
 interface Banner {
   id: string; image_url: string; title: string; subtitle: string;
@@ -52,6 +54,7 @@ export default function SiteSettingsClient({ initialSettings }: { initialSetting
     for (const { key, value } of updates) {
       await supabase.from('site_settings').upsert({ key, value })
     }
+    await revalidateSettings()
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -127,12 +130,12 @@ export default function SiteSettingsClient({ initialSettings }: { initialSetting
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">圖片 URL</label>
-                    <input
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Banner 圖片</label>
+                    <ImageUpload
                       value={banner.image_url}
-                      onChange={(e) => updateBanner(banner.id, 'image_url', e.target.value)}
-                      placeholder="https://... 或 /images/hero.jpg"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-[#c9a84c]"
+                      onChange={(url) => updateBanner(banner.id, 'image_url', url)}
+                      placeholder="圖片 URL 或點擊上傳"
+                      folder="banners"
                     />
                   </div>
                   <div>
@@ -248,12 +251,12 @@ export default function SiteSettingsClient({ initialSettings }: { initialSetting
                 <p className="text-xs text-gray-400 mt-1">建議 120-160 字元 | 目前 {seo.meta_description.length} 字</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">OG Image URL（社群分享圖片）</label>
-                <input
+                <label className="block text-sm font-medium text-gray-700 mb-1">OG Image（社群分享圖片）</label>
+                <ImageUpload
                   value={seo.og_image}
-                  onChange={(e) => setSeo({ ...seo, og_image: e.target.value })}
-                  placeholder="/images/og-image.jpg"
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#c9a84c]"
+                  onChange={(url) => setSeo({ ...seo, og_image: url })}
+                  placeholder="圖片 URL 或點擊上傳"
+                  folder="seo"
                 />
               </div>
             </div>

@@ -1,38 +1,44 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { createClient } from '@/lib/supabase/server'
+import { unstable_cache } from 'next/cache'
+import { Suspense } from 'react'
+import { createPublicClient } from '@/lib/supabase/server'
 import ProductCard from '@/components/store/ProductCard'
 import { ArrowRight, Gem, Sparkles, Gift, HeartHandshake } from 'lucide-react'
 import type { ProductWithImages } from '@/types/database'
 
-async function getFeaturedProducts(): Promise<ProductWithImages[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('products')
-    .select(`
-      *,
-      product_images(*),
-      categories(*),
-      inventory(*),
-      product_variants(*)
-    `)
-    .eq('is_active', true)
-    .eq('is_featured', true)
-    .order('created_at', { ascending: false })
-    .limit(6)
-  return (data as ProductWithImages[]) ?? []
-}
+export const revalidate = 300
 
-async function getSiteSettings() {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('site_settings')
-    .select('*')
-    .in('key', ['hero_banners', 'homepage_sections', 'store_info'])
-  const settings: Record<string, unknown> = {}
-  data?.forEach((s) => { settings[s.key] = s.value })
-  return settings
-}
+const getFeaturedProducts = unstable_cache(
+  async (): Promise<ProductWithImages[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('products')
+      .select(`*, product_images(*), categories(*), inventory(*), product_variants(*)`)
+      .eq('is_active', true)
+      .eq('is_featured', true)
+      .order('created_at', { ascending: false })
+      .limit(6)
+    return (data as ProductWithImages[]) ?? []
+  },
+  ['featured-products'],
+  { revalidate: 300, tags: ['products'] }
+)
+
+const getSiteSettings = unstable_cache(
+  async () => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('site_settings')
+      .select('*')
+      .in('key', ['hero_banners', 'homepage_sections', 'store_info'])
+    const settings: Record<string, unknown> = {}
+    data?.forEach((s) => { settings[s.key] = s.value })
+    return settings
+  },
+  ['site-settings'],
+  { revalidate: 600, tags: ['settings'] }
+)
 
 const features = [
   { icon: Gem, title: '精緻飾品', desc: '點綴每個閃閃亮亮的時刻' },
@@ -41,8 +47,65 @@ const features = [
   { icon: HeartHandshake, title: '安心服務', desc: '快速出貨好安心' },
 ]
 
+// 單獨串流精選商品，不擋 hero 渲染
+async function FeaturedProducts() {
+  const products = await getFeaturedProducts()
+  if (products.length === 0) return null
+
+  return (
+    <section className="py-16 bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-10">
+          <p className="text-[#c9a84c] text-sm font-semibold tracking-widest uppercase mb-2">FEATURED</p>
+          <h2 className="text-3xl font-bold text-[#0d1b3e]">精選商品</h2>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+        <div className="text-center mt-10">
+          <Link
+            href="/products"
+            className="inline-flex items-center gap-2 border-2 border-[#0d1b3e] text-[#0d1b3e] px-8 py-3 rounded-full font-semibold hover:bg-[#0d1b3e] hover:text-white transition-all"
+          >
+            瀏覽所有商品
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function FeaturedProductsSkeleton() {
+  return (
+    <section className="py-16 bg-gray-50 animate-pulse">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-10">
+          <div className="h-3 w-16 bg-gray-200 rounded mx-auto mb-2" />
+          <div className="h-8 w-32 bg-gray-200 rounded mx-auto" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm">
+              <div className="aspect-square bg-gray-200" />
+              <div className="p-3 space-y-2">
+                <div className="h-3 bg-gray-200 rounded w-1/3" />
+                <div className="h-4 bg-gray-200 rounded w-3/4" />
+                <div className="h-4 bg-gray-100 rounded w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default async function HomePage() {
-  const [products, settings] = await Promise.all([getFeaturedProducts(), getSiteSettings()])
+  // 只等設定資料（已快取），hero 立刻出現
+  const settings = await getSiteSettings()
   const banners = (settings.hero_banners as Array<{
     id: string; image_url: string; title: string; subtitle: string;
     cta_text: string; cta_link: string; is_active: boolean
@@ -52,9 +115,8 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* Hero Section */}
+      {/* Hero Section — 立刻顯示 */}
       <section className="relative min-h-[85vh] starry-bg flex items-center overflow-hidden">
-        {/* Stars background effect */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {Array.from({ length: 60 }).map((_, i) => (
             <div
@@ -72,8 +134,7 @@ export default async function HomePage() {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center py-20">
-            {/* Text */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-8 items-center py-20">
             <div>
               <p className="text-[#c9a84c] text-sm font-semibold tracking-widest uppercase mb-4">
                 Aura & Ode — ACCESSORIES & SCENT
@@ -107,9 +168,8 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            {/* Hero Image */}
             <div className="relative flex justify-center">
-              <div className="relative w-full max-w-md aspect-square">
+              <div className="relative w-full aspect-[4/3]">
                 {activeBanner?.image_url && activeBanner.image_url !== '/images/hero-1.jpg' ? (
                   <Image
                     src={activeBanner.image_url}
@@ -140,7 +200,7 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* Features */}
+      {/* Features — 立刻顯示 */}
       <section className="bg-white py-12 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
@@ -159,33 +219,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Featured Products */}
-      {products.length > 0 && (
-        <section className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10">
-              <p className="text-[#c9a84c] text-sm font-semibold tracking-widest uppercase mb-2">FEATURED</p>
-              <h2 className="text-3xl font-bold text-[#0d1b3e]">精選商品</h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-            <div className="text-center mt-10">
-              <Link
-                href="/products"
-                className="inline-flex items-center gap-2 border-2 border-[#0d1b3e] text-[#0d1b3e] px-8 py-3 rounded-full font-semibold hover:bg-[#0d1b3e] hover:text-white transition-all"
-              >
-                瀏覽所有商品
-                <ArrowRight size={16} />
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* 精選商品 — 串流，不擋上方內容 */}
+      <Suspense fallback={<FeaturedProductsSkeleton />}>
+        <FeaturedProducts />
+      </Suspense>
 
-      {/* Category Grid */}
+      {/* Category Grid — 立刻顯示 */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
@@ -219,7 +258,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Brand Story */}
+      {/* Brand Story — 立刻顯示 */}
       <section className="py-20 starry-bg text-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <p className="text-[#c9a84c] text-sm font-semibold tracking-widest uppercase mb-4">OUR STORY</p>
