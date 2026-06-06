@@ -1,10 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate, formatPrice } from '@/lib/utils/format'
 
+type CustomerRow = {
+  id: string
+  full_name: string | null
+  email: string | null
+  phone: string | null
+  role: string | null
+  created_at: string
+  orders: { total: number; created_at: string }[]
+}
+
 export default async function AdminCustomersPage() {
   const supabase = await createClient()
 
-  const { data: customers } = await supabase
+  const { data: customersRaw } = await supabase
     .from('profiles')
     .select(`
       *,
@@ -12,6 +22,8 @@ export default async function AdminCustomersPage() {
     `)
     .eq('role', 'customer')
     .order('created_at', { ascending: false })
+
+  const customers = customersRaw as CustomerRow[] | null
 
   return (
     <div>
