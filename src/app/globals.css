@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+:root {
+  /* Aura & Ode Brand Colors */
+  --ao-navy: #0d1b3e;
+  --ao-navy-light: #1a2f5e;
+  --ao-gold: #c9a84c;
+  --ao-gold-light: #e2c472;
+  --ao-purple: #6b4fa0;
+  --ao-purple-light: #9b7fd4;
+  --ao-cream: #f5f0e8;
+  --ao-white: #ffffff;
+  --background: #ffffff;
+  --foreground: #1a1a2e;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+/* Starry background for store pages */
+.starry-bg {
+  background: radial-gradient(ellipse at bottom, #1a2f5e 0%, #0d1b3e 60%, #050d1f 100%);
+  min-height: 100vh;
+}
+
+/* Gold gradient text */
+.gold-text {
+  background: linear-gradient(135deg, #c9a84c, #e2c472, #c9a84c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Product card hover */
+.product-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(201, 168, 76, 0.2);
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Noto Sans TC', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Loading shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #c9a84c; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a88a3a; }
+
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid #c9a84c;
+  outline-offset: 2px;
+}
