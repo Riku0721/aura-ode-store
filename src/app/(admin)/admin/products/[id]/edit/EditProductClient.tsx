@@ -6,11 +6,12 @@ import Link from 'next/link'
 import { ChevronLeft, Plus, X, Trash2 } from 'lucide-react'
 import type { ProductWithImages } from '@/types/database'
 import ImageUpload from '@/components/admin/ImageUpload'
+import CategorySelect, { type Category } from '@/components/admin/CategorySelect'
 import { revalidateProducts } from '@/app/actions/revalidate'
 
 interface Props {
   product: ProductWithImages
-  categories: { id: string; name: string }[]
+  categories: Category[]
 }
 
 export default function EditProductClient({ product, categories }: Props) {
@@ -177,19 +178,11 @@ export default function EditProductClient({ product, categories }: Props) {
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#c9a84c] font-mono"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">分類</label>
-                  <select
-                    value={form.category_id}
-                    onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#c9a84c] bg-white"
-                  >
-                    <option value="">未分類</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
+                <CategorySelect
+                  categories={categories}
+                  value={form.category_id}
+                  onChange={(category_id) => setForm({ ...form, category_id })}
+                />
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">簡短描述</label>
                   <input

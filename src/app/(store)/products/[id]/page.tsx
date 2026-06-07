@@ -10,6 +10,7 @@ interface Props {
 
 export default async function ProductDetailPage({ params }: Props) {
   const { id } = await params
+  const slug = decodeURIComponent(id)
   const supabase = await createClient()
 
   const { data: product } = await supabase
@@ -21,7 +22,7 @@ export default async function ProductDetailPage({ params }: Props) {
       inventory(*),
       product_variants(*)
     `)
-    .eq('slug', id)
+    .eq('slug', slug)
     .eq('is_active', true)
     .single()
 
@@ -32,8 +33,9 @@ export default async function ProductDetailPage({ params }: Props) {
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params
+  const slug = decodeURIComponent(id)
   const supabase = await createClient()
-  const { data } = await supabase.from('products').select('name, short_description').eq('slug', id).single()
+  const { data } = await supabase.from('products').select('name, short_description').eq('slug', slug).single()
   return {
     title: data ? `${data.name} | Aura & Ode` : 'Aura & Ode',
     description: data?.short_description ?? '',

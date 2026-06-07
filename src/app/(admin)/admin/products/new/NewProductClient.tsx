@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, Plus, X } from 'lucide-react'
 import Link from 'next/link'
 import ImageUpload from '@/components/admin/ImageUpload'
+import CategorySelect, { type Category } from '@/components/admin/CategorySelect'
 import { revalidateProducts } from '@/app/actions/revalidate'
 
 interface Props {
-  categories: { id: string; name: string }[]
+  categories: Category[]
 }
 
 export default function NewProductClient({ categories }: Props) {
@@ -90,19 +91,24 @@ export default function NewProductClient({ categories }: Props) {
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-1">
         <Link href="/admin/products" className="text-gray-500 hover:text-gray-700">
           <ChevronLeft size={20} />
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">新增商品</h1>
       </div>
+      <p className="text-sm text-gray-400 mb-6 ml-8">依序填寫下方欄位，標示 <span className="text-red-500">*</span> 為必填，完成後按下「新增商品」即可上架</p>
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Info */}
           <div className="lg:col-span-2 space-y-4">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-              <h2 className="font-bold text-gray-900 mb-4">基本資訊</h2>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#0d1b3e] text-white text-xs font-bold">1</span>
+                <h2 className="font-bold text-gray-900">基本資訊</h2>
+              </div>
+              <p className="text-xs text-gray-400 mb-4 ml-7">商品的名稱、分類與描述，將顯示在商店與商品頁面上</p>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">商品名稱 <span className="text-red-500">*</span></label>
@@ -122,20 +128,13 @@ export default function NewProductClient({ categories }: Props) {
                     placeholder="star-moon-earring-gold"
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#c9a84c] font-mono"
                   />
+                  <p className="text-xs text-gray-400 mt-1">會根據商品名稱自動產生，用於商店網址，可自行修改</p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">分類</label>
-                  <select
-                    value={form.category_id}
-                    onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#c9a84c] bg-white"
-                  >
-                    <option value="">未分類</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
+                <CategorySelect
+                  categories={categories}
+                  value={form.category_id}
+                  onChange={(category_id) => setForm({ ...form, category_id })}
+                />
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">簡短描述</label>
                   <input
@@ -160,7 +159,11 @@ export default function NewProductClient({ categories }: Props) {
 
             {/* Images */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-              <h2 className="font-bold text-gray-900 mb-4">商品圖片</h2>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#0d1b3e] text-white text-xs font-bold">2</span>
+                <h2 className="font-bold text-gray-900">商品圖片</h2>
+              </div>
+              <p className="text-xs text-gray-400 mb-4 ml-7">第一張圖片將作為主圖，顯示在商品列表與卡片上</p>
               <div className="space-y-4">
                 {imageUrls.map((url, i) => (
                   <div key={i} className="space-y-1">
@@ -203,7 +206,11 @@ export default function NewProductClient({ categories }: Props) {
           {/* Right Panel */}
           <div className="space-y-4">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-              <h2 className="font-bold text-gray-900 mb-4">定價</h2>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#0d1b3e] text-white text-xs font-bold">3</span>
+                <h2 className="font-bold text-gray-900">定價</h2>
+              </div>
+              <p className="text-xs text-gray-400 mb-4 ml-7">設定顧客看到的售價，原價會以劃線顯示來呈現折扣</p>
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">售價 (TWD) <span className="text-red-500">*</span></label>
@@ -229,7 +236,11 @@ export default function NewProductClient({ categories }: Props) {
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-              <h2 className="font-bold text-gray-900 mb-4">庫存</h2>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#0d1b3e] text-white text-xs font-bold">4</span>
+                <h2 className="font-bold text-gray-900">庫存</h2>
+              </div>
+              <p className="text-xs text-gray-400 mb-4 ml-7">用來追蹤可販售的數量，售完將無法下單</p>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">初始庫存數量</label>
                 <input
@@ -252,7 +263,11 @@ export default function NewProductClient({ categories }: Props) {
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-              <h2 className="font-bold text-gray-900 mb-4">設定</h2>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#0d1b3e] text-white text-xs font-bold">5</span>
+                <h2 className="font-bold text-gray-900">設定</h2>
+              </div>
+              <p className="text-xs text-gray-400 mb-4 ml-7">控制商品是否在商店上架顯示，以及搜尋用的標籤</p>
               <div className="space-y-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
