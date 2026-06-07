@@ -57,51 +57,18 @@ export default function CheckoutPage() {
     if (items.length === 0) return
     setLoading(true)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-
-      const { data: order, error } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user?.id ?? null,
-          guest_email: form.is_guest ? form.email : null,
-          guest_name: form.is_guest ? form.name : null,
-          guest_phone: form.is_guest ? form.phone : null,
-          shipping_name: form.name,
-          shipping_phone: form.phone,
-          shipping_city: form.city,
-          shipping_district: form.district,
-          shipping_address: form.address,
-          shipping_postal_code: form.postal_code || null,
-          subtotal: sub,
-          shipping_fee: shippingFee,
-          discount_amount: discount,
-          total,
-          coupon_code: couponCode || null,
-          notes: form.notes || null,
-          payment_method: 'pending',
-        })
-        .select('id, order_number')
-        .single()
-
-      if (error || !order) throw error
-
-      // Insert order items
-      await supabase.from('order_items').insert(
-        items.map((item) => ({
-          order_id: order.id,
-          product_id: item.product_id,
-          variant_id: item.variant_id ?? null,
-          product_name: item.name,
-          variant_name: item.variant_name ?? null,
-          price: item.price,
-          quantity: item.quantity,
-          subtotal: item.price * item.quantity,
-        }))
-      )
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          form, items, subtotal: sub, shippingFee, discount, total, couponCode,
+        }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error)
 
       clearCart()
-      router.push(`/checkout/success?order=${order.order_number}`)
+      router.push(`/checkout/success?order=${result.order_number}`)
     } catch (err) {
       console.error(err)
       alert('訂單建立失敗，請稍後再試')
