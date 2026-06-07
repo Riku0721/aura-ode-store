@@ -1,18 +1,17 @@
 'use client'
-import { Suspense, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirect = searchParams.get('redirect') ?? '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,7 +23,7 @@ function LoginForm() {
       if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        router.push(redirect)
+        router.push('/')
         router.refresh()
       } else {
         const { error } = await supabase.auth.signUp({ email, password })
@@ -36,6 +35,23 @@ function LoginForm() {
       setError(err instanceof Error ? err.message : '登入失敗，請稍後再試')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleGoogleAuth = async () => {
+    setGoogleLoading(true)
+    setError('')
+    const supabase = createClient()
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      })
+      if (error) throw error
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Google 登入失敗，請稍後再試')
+      setGoogleLoading(false)
     }
   }
 
@@ -53,6 +69,27 @@ function LoginForm() {
             {m === 'login' ? '登入' : '註冊'}
           </button>
         ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={handleGoogleAuth}
+        disabled={googleLoading}
+        className="w-full flex items-center justify-center gap-2 border border-gray-200 text-gray-700 py-3 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-all disabled:opacity-50"
+      >
+        <svg className="w-5 h-5" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z" />
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z" />
+          <path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29A11.96 11.96 0 0 0 0 12c0 1.93.46 3.76 1.29 5.38l3.98-3.09z" />
+          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.94 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z" />
+        </svg>
+        {googleLoading ? '處理中...' : (mode === 'login' ? '使用 Google 登入' : '使用 Google 註冊')}
+      </button>
+
+      <div className="flex items-center gap-3 my-5">
+        <div className="flex-1 h-px bg-gray-200" />
+        <span className="text-xs text-gray-400">或</span>
+        <div className="flex-1 h-px bg-gray-200" />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -112,9 +149,7 @@ export default function LoginPage() {
           </Link>
           <p className="text-white/60 mt-2 text-sm">登入您的帳戶</p>
         </div>
-        <Suspense fallback={<div className="bg-white rounded-2xl shadow-xl p-8 text-center text-gray-400">載入中...</div>}>
-          <LoginForm />
-        </Suspense>
+        <LoginForm />
       </div>
     </div>
   )
